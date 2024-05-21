@@ -10,11 +10,17 @@
 //! Seriously, ECB is NOT secure. Don't use it irl. We are implementing it here to understand _why_
 //! it is not secure and make the point that the most straight-forward approach isn't always the
 //! best, and can sometimes be trivially broken.
+//!
+//!
+
+
 
 use aes::{
 	cipher::{generic_array::GenericArray, BlockCipher, BlockDecrypt, BlockEncrypt, KeyInit},
 	Aes128,
 };
+use aes::cipher::consts::U16;
+
 
 ///We're using AES 128 which has 16-byte (128 bit) blocks.
 const BLOCK_SIZE: usize = 16;
@@ -95,12 +101,21 @@ fn group(data: Vec<u8>) -> Vec<[u8; BLOCK_SIZE]> {
 
 /// Does the opposite of the group function
 fn un_group(blocks: Vec<[u8; BLOCK_SIZE]>) -> Vec<u8> {
-	todo!()
-}
+	let mut data = Vec::new();
+	for block in blocks {
+		data.extend_from_slice(&block);
+	}
+	data}
 
 /// Does the opposite of the pad function.
 fn un_pad(data: Vec<u8>) -> Vec<u8> {
-	todo!()
+	let mut data_mut = data;
+	let pad_length = data_mut[data_mut.len() - 1] as usize;
+	data_mut.truncate(data_mut.len() - pad_length);
+	if pad_length == BLOCK_SIZE {
+		data_mut.truncate(data_mut.len() - BLOCK_SIZE);
+	}
+	data_mut
 }
 
 /// The first mode we will implement is the Electronic Code Book, or ECB mode.
@@ -111,7 +126,16 @@ fn un_pad(data: Vec<u8>) -> Vec<u8> {
 /// One good thing about this mode is that it is parallelizable. But to see why it is
 /// insecure look at: https://www.ubiqsecurity.com/wp-content/uploads/2022/02/ECB2.png
 fn ecb_encrypt(plain_text: Vec<u8>, key: [u8; 16]) -> Vec<u8> {
-	todo!()
+	let padded_text = pad(plain_text);
+	let cipher = Aes128::new(&GenericArray::from(key));
+	let encrypted_blocks: Vec<[u8; 16]> = group(padded_text).into_iter().map(|block| {
+		let mut encrypted_block = block;
+		let mut block_array: GenericArray<u8, U16> = GenericArray::from(encrypted_block);
+		cipher.encrypt_block(&mut block_array);
+		block_array.into()
+	}).collect();
+	let encrypted_text: Vec<u8> = un_group(encrypted_blocks);
+	encrypted_text
 }
 
 /// Opposite of ecb_encrypt.
