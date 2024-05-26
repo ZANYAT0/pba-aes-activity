@@ -24,9 +24,18 @@ use aes::cipher::consts::U16;
 
 ///We're using AES 128 which has 16-byte (128 bit) blocks.
 const BLOCK_SIZE: usize = 16;
+const SYM_KEY: &[u8; 16] = &[
+	6, 108, 74, 203, 170, 212, 94, 238, 171, 104, 19, 17, 248, 197, 127, 138,
+];
 
 fn main() {
-	todo!("Maybe this should be a library crate. TBD");
+	let test_str = "Hello Polkadot Blockchain Academy Singapore 2024!!!";
+	let result = ecb_encrypt(Vec::from(test_str.as_bytes()), *SYM_KEY);
+	println!("encrypted string: {:?}", result);
+
+	let decrypted = ecb_decrypt(result, *SYM_KEY);
+	println!("decrypted string: {:?}", String::from_utf8(decrypted));
+	// todo!("Maybe this should be a library crate. TBD");
 }
 
 /// Simple AES encryption
@@ -130,7 +139,7 @@ fn ecb_encrypt(plain_text: Vec<u8>, key: [u8; 16]) -> Vec<u8> {
 	let padded_text = pad(plain_text);
 	let cipher = Aes128::new(&GenericArray::from(key));
 	let encrypted_blocks: Vec<[u8; 16]> = group(padded_text).into_iter().map(|block| {
-		let mut encrypted_block = block;
+		let encrypted_block = block;
 		let mut block_array: GenericArray<u8, U16> = GenericArray::from(encrypted_block);
 		cipher.encrypt_block(&mut block_array);
 		block_array.into()
@@ -167,7 +176,16 @@ fn ecb_decrypt(cipher_text: Vec<u8>, key: [u8; BLOCK_SIZE]) -> Vec<u8> {
 fn cbc_encrypt(plain_text: Vec<u8>, key: [u8; BLOCK_SIZE]) -> Vec<u8> {
 	// Remember to generate a random initialization vector for the first block.
 
-	todo!()
+	let padded_text = pad(plain_text);
+	let cipher = Aes128::new(&GenericArray::from(key));
+	let encrypted_blocks: Vec<[u8; 16]> = group(padded_text).into_iter().map(|block| {
+		let encrypted_block = block;
+		let mut block_array: GenericArray<u8, U16> = GenericArray::from(encrypted_block);
+		cipher.encrypt_block(&mut block_array);
+		block_array.into()
+	}).collect();
+	let encrypted_text: Vec<u8> = un_group(encrypted_blocks);
+	encrypted_text
 }
 
 fn cbc_decrypt(cipher_text: Vec<u8>, key: [u8; BLOCK_SIZE]) -> Vec<u8> {
