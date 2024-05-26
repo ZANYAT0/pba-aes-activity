@@ -20,7 +20,7 @@ use aes::{
 	Aes128,
 };
 use aes::cipher::consts::U16;
-
+use rand::Rng;
 
 ///We're using AES 128 which has 16-byte (128 bit) blocks.
 const BLOCK_SIZE: usize = 16;
@@ -35,7 +35,23 @@ fn main() {
 
 	let decrypted = ecb_decrypt(result, *SYM_KEY);
 	println!("decrypted string: {:?}", String::from_utf8(decrypted));
+
+	let result = cbc_encrypt(Vec::from(test_str.as_bytes()), *SYM_KEY);
+	println!("cbc encrypted string: {:?}", result);
+
+	let decrypted = cbc_encrypt(result, *SYM_KEY);
+	println!("cbc decrypted string: {:?}", String::from_utf8(decrypted));
 	// todo!("Maybe this should be a library crate. TBD");
+
+
+}
+
+fn xor_arrays<const N: usize>(a: [u8; N], b: [u8; N]) -> [u8; N] {
+	let mut result = [0u8; N];
+	for i in 0..N {
+		result[i] = a[i] ^ b[i];
+	}
+	result
 }
 
 /// Simple AES encryption
@@ -175,17 +191,7 @@ fn ecb_decrypt(cipher_text: Vec<u8>, key: [u8; BLOCK_SIZE]) -> Vec<u8> {
 /// is inserted as the first block of ciphertext.
 fn cbc_encrypt(plain_text: Vec<u8>, key: [u8; BLOCK_SIZE]) -> Vec<u8> {
 	// Remember to generate a random initialization vector for the first block.
-
-	let padded_text = pad(plain_text);
-	let cipher = Aes128::new(&GenericArray::from(key));
-	let encrypted_blocks: Vec<[u8; 16]> = group(padded_text).into_iter().map(|block| {
-		let encrypted_block = block;
-		let mut block_array: GenericArray<u8, U16> = GenericArray::from(encrypted_block);
-		cipher.encrypt_block(&mut block_array);
-		block_array.into()
-	}).collect();
-	let encrypted_text: Vec<u8> = un_group(encrypted_blocks);
-	encrypted_text
+	todo!()
 }
 
 fn cbc_decrypt(cipher_text: Vec<u8>, key: [u8; BLOCK_SIZE]) -> Vec<u8> {
