@@ -190,43 +190,12 @@ fn ecb_decrypt(cipher_text: Vec<u8>, key: [u8; BLOCK_SIZE]) -> Vec<u8> {
 /// very first block because it doesn't have a previous block. Typically this IV
 /// is inserted as the first block of ciphertext.
 fn cbc_encrypt(plain_text: Vec<u8>, key: [u8; BLOCK_SIZE]) -> Vec<u8> {
-	let padded_text = pad(plain_text);
-	let cipher = Aes128::new(&GenericArray::from(key));
-	let mut rng = rand::thread_rng();
-	let iv: [u8; BLOCK_SIZE] = rng.gen();
-
-	let mut xor_key = iv;
-	let mut encrypted_blocks: Vec<[u8; 16]> = vec![iv]; // Start with the IV
-	for block in group(padded_text) {
-		let mut block_array: GenericArray<u8, U16> = GenericArray::from(xor_arrays(block, xor_key));
-		cipher.encrypt_block(&mut block_array);
-		xor_key = block_array.clone().into();
-		encrypted_blocks.push(block_array.into());
-	}
-
-	un_group(encrypted_blocks)
+	// Remember to generate a random initialization vector for the first block.
+	todo!()
 }
 
 fn cbc_decrypt(cipher_text: Vec<u8>, key: [u8; BLOCK_SIZE]) -> Vec<u8> {
-	let cipher = Aes128::new(&GenericArray::from(key));
-	let blocks: Vec<[u8; BLOCK_SIZE]> = group(cipher_text);
-	if blocks.is_empty() {
-		return Vec::new();
-	}
-	let iv = blocks[0];
-
-	let mut previous_block = iv;
-	let mut decrypted_blocks: Vec<[u8; BLOCK_SIZE]> = Vec::new();
-	for &block in &blocks[1..] {
-		let mut block_array: GenericArray<u8, U16> = GenericArray::from(block);
-		cipher.decrypt_block(&mut block_array);
-		let decrypted_block = xor_arrays(block_array.into(), previous_block);
-		decrypted_blocks.push(decrypted_block);
-		previous_block = block;
-	}
-
-	let decrypted_text = un_group(decrypted_blocks);
-	un_pad(decrypted_text)
+	todo!()
 }
 
 /// Another mode which you can implement on your own is counter mode.
